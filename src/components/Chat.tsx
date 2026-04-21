@@ -4,7 +4,9 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI } from '@google/genai';
-import { useApp, type ChatMessage } from '../context';
+import DOMPurify from 'dompurify';
+import { useApp } from '../context';
+import type { ChatMessage } from '../types';
 import { CHAT_RESPONSES } from '../data';
 import './Chat.css';
 
@@ -275,10 +277,10 @@ User Question: ${content}`;
                 <div 
                   className="chat__message-text"
                   dangerouslySetInnerHTML={{ 
-                    __html: msg.content
+                    __html: DOMPurify.sanitize(msg.content
                       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                       .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                      .replace(/•/g, '<span class="chat__bullet">•</span>')
+                      .replace(/•/g, '<span class="chat__bullet">•</span>'))
                   }}
                 />
               </div>

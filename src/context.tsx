@@ -4,7 +4,7 @@
    ============================================ */
 
 import { createContext, useContext, useReducer, useEffect, useCallback, type ReactNode } from 'react';
-import type { UserProfile, AppView, VoterStatus, UserGoal } from './types';
+import type { UserProfile, AppView, VoterStatus, UserGoal, ChatMessage } from './types';
 
 const STORAGE_KEY = 'election-companion-user';
 
@@ -26,12 +26,7 @@ interface AppState {
   chatMessages: ChatMessage[];
 }
 
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: number;
-}
+
 
 /* Actions */
 type AppAction =
