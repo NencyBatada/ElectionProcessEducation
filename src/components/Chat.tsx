@@ -3,6 +3,7 @@
    ============================================ */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { GoogleGenAI } from '@google/genai';
 import { useApp, type ChatMessage } from '../context';
 import { CHAT_RESPONSES } from '../data';
 import './Chat.css';
@@ -153,7 +154,7 @@ export default function Chat() {
     ];
   }, [user.voterStatus]);
 
-  const sendMessage = useCallback((content: string) => {
+  const sendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
 
     // Add user message
@@ -167,26 +168,66 @@ export default function Chat() {
     setInputValue('');
     setIsTyping(true);
 
-    // Get AI responses
-    const responses = getAIResponse(content);
+    try {
+      if (!import.meta.env.VITE_GEMINI_API_KEY) {
+        throw new Error('No API key found');
+      }
 
-    // Simulate typing delay
-    responses.forEach((response, i) => {
-      setTimeout(() => {
-        addChatMessage({
-          id: generateId(),
-          role: 'assistant',
-          content: response,
-          timestamp: Date.now(),
-        });
-        if (i === responses.length - 1) {
-          setIsTyping(false);
-        }
-      }, (i + 1) * 600);
-    });
+      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+      const prompt = `You are a helpful, non-partisan AI guide for an Indian Election Companion application.
+      
+Current User Context:
+- State: ${user.state || 'India'}
+- Voter Registration Status: ${user.voterStatus.replace('-', ' ')}
+- Goal: Help them understand the Indian electoral process (Form 6, EVMs, NVSP, Voter ID, etc.).
 
-    inputRef.current?.focus();
-  }, [addChatMessage, getAIResponse]);
+Important rules:
+1. Be extremely concise. Keep paragraphs very short and readable. Use bullet points when listing.
+2. NEVER endorse or suggest any political candidate, party, or ideology. Remain strictly neutral.
+3. Only provide verified Indian process information. Direct users to voters.eci.gov.in when necessary.
+
+User Question: ${content}`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt
+      });
+
+      addChatMessage({
+        id: generateId(),
+        role: 'assistant',
+        content: response.text || "I'm having trouble retrieving information right now.",
+        timestamp: Date.now(),
+      });
+      setIsTyping(false);
+
+    } catch (e) {
+      console.warn("Falling back to static response:", e);
+      // Fallback to static responses if Gemini fails
+      const responses = getAIResponse(content);
+
+      // Simulate typing delay for static
+      responses.forEach((response, i) => {
+        setTimeout(() => {
+          addChatMessage({
+            id: generateId(),
+            role: 'assistant',
+            content: response,
+            timestamp: Date.now(),
+          });
+          if (i === responses.length - 1) {
+            setIsTyping(false);
+          }
+        }, (i + 1) * 600);
+      });
+    }
+
+    // Attempt to scroll again after send
+    setTimeout(() => {
+      inputRef.current?.focus();
+      scrollToBottom();
+    }, 100);
+  }, [addChatMessage, getAIResponse, user.state, user.voterStatus, scrollToBottom]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
