@@ -33,7 +33,7 @@ export function useAnnouncer(): AnnouncerContextType {
 export function LiveAnnouncerProvider({ children }: { children: ReactNode }) {
   const [politeMessage, setPoliteMessage] = useState('');
   const [assertiveMessage, setAssertiveMessage] = useState('');
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const announce = useCallback((message: string, politeness: Politeness = 'polite') => {
     // Clear previous message briefly to force re-announcement of the same text
