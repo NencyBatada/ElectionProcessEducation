@@ -1,10 +1,20 @@
 /* ============================================
    Election Companion — User Context Provider
    Manages user state with localStorage persistence
+   and Firebase analytics integration.
    ============================================ */
 
 import { createContext, useContext, useReducer, useEffect, useCallback, type ReactNode } from 'react';
 import type { UserProfile, AppView, VoterStatus, UserGoal, ChatMessage } from './types';
+import {
+  trackNavigation,
+  trackStepComplete,
+  trackStepUncomplete,
+  trackEligibilityCheck,
+  trackOnboardingComplete,
+  trackProfileReset,
+} from './services/analytics';
+import { logUsageEvent } from './firebase';
 
 const STORAGE_KEY = 'election-companion-user';
 
@@ -53,7 +63,10 @@ function loadUserFromStorage(): UserProfile {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      return { ...defaultProfile, ...parsed };
+      // Validate the parsed data structure
+      if (typeof parsed === 'object' && parsed !== null) {
+        return { ...defaultProfile, ...parsed };
+      }
     }
   } catch {
     console.warn('Failed to load user data from localStorage');
@@ -173,9 +186,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [state.user]);
 
   const navigate = useCallback((view: AppView) => {
+    const from = state.currentView;
     dispatch({ type: 'SET_VIEW', view });
+    trackNavigation(from, view);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }, [state.currentView]);
 
   const setName = useCallback((name: string) => {
     dispatch({ type: 'SET_NAME', name });
@@ -195,19 +210,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const completeStep = useCallback((stepId: string) => {
     dispatch({ type: 'COMPLETE_STEP', stepId });
+    trackStepComplete(stepId);
+    logUsageEvent({ eventType: 'step_complete', metadata: { stepId } });
   }, []);
 
   const uncompleteStep = useCallback((stepId: string) => {
     dispatch({ type: 'UNCOMPLETE_STEP', stepId });
+    trackStepUncomplete(stepId);
   }, []);
 
   const setEligibility = useCallback((itemId: string, checked: boolean) => {
     dispatch({ type: 'SET_ELIGIBILITY', itemId, checked });
+    trackEligibilityCheck(itemId, checked);
   }, []);
 
   const completeOnboarding = useCallback(() => {
     dispatch({ type: 'COMPLETE_ONBOARDING' });
-  }, []);
+    trackOnboardingComplete(state.user.state, state.user.voterStatus, state.user.currentGoal);
+    logUsageEvent({
+      eventType: 'onboarding_complete',
+      metadata: {
+        state: state.user.state,
+        voterStatus: state.user.voterStatus,
+        goal: state.user.currentGoal ?? 'none',
+      },
+    });
+  }, [state.user.state, state.user.voterStatus, state.user.currentGoal]);
 
   const addChatMessage = useCallback((message: ChatMessage) => {
     dispatch({ type: 'ADD_CHAT_MESSAGE', message });
@@ -215,6 +243,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const resetUser = useCallback(() => {
     dispatch({ type: 'RESET_USER' });
+    trackProfileReset();
   }, []);
 
   const getProgress = useCallback(() => {
