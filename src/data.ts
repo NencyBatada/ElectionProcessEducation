@@ -403,4 +403,10 @@ export const CHAT_RESPONSES: Record<string, string[]> = {
     "• Share awareness (without breaching secrecy) with friends and family",
     "• Encourage others to vote in their respective phases!",
   ],
+  'default': [
+    "I'm here to help you navigate the Indian election process! 🗳️",
+    "You can ask me about voter registration (Form 6), finding your polling booth, what ID to carry, or understand the EVM voting process.",
+    "For official information, visit **voters.eci.gov.in** or call the ECI Helpline at **1950**.",
+    "**Next Step →** What would you like to know more about?",
+  ],
 };
