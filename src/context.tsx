@@ -4,7 +4,7 @@
    and Firebase analytics integration.
    ============================================ */
 
-import { createContext, useContext, useReducer, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useReducer, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import type { UserProfile, AppView, VoterStatus, UserGoal, ChatMessage } from './types';
 import {
   trackNavigation,
@@ -252,7 +252,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return Math.round((completed / totalSteps) * 100);
   }, [state.user.completedSteps]);
 
-  const value: AppContextType = {
+  const value: AppContextType = useMemo(() => ({
     state,
     dispatch,
     navigate,
@@ -267,7 +267,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addChatMessage,
     resetUser,
     getProgress,
-  };
+  }), [
+    state,
+    navigate,
+    setName,
+    setState,
+    setVoterStatus,
+    setGoal,
+    completeStep,
+    uncompleteStep,
+    setEligibility,
+    completeOnboarding,
+    addChatMessage,
+    resetUser,
+    getProgress,
+  ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

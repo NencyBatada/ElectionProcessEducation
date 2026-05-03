@@ -192,13 +192,37 @@ User Question: ${content}`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: prompt
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              text: { 
+                type: "STRING", 
+                description: "The AI's response to the user's question, formatted in markdown."
+              }
+            },
+            required: ["text"]
+          }
+        }
       });
+
+      let aiText = "I'm having trouble retrieving information right now.";
+      try {
+        if (response.text) {
+          const parsed = JSON.parse(response.text);
+          aiText = parsed.text || aiText;
+        }
+      } catch (e) {
+        console.warn("Failed to parse AI JSON response", e);
+        aiText = response.text || aiText;
+      }
 
       addChatMessage({
         id: generateId(),
         role: 'assistant',
-        content: response.text || "I'm having trouble retrieving information right now.",
+        content: aiText,
         timestamp: Date.now(),
       });
       setIsTyping(false);

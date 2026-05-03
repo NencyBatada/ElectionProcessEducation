@@ -7,6 +7,8 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, type Firestore } from 'firebase/firestore';
 import { getAnalytics, type Analytics } from 'firebase/analytics';
+import { getAuth, type Auth } from 'firebase/auth';
+import { getPerformance, type FirebasePerformance } from 'firebase/performance';
 
 const firebaseConfig = {
   projectId: "prompt-wars-493105",
@@ -21,9 +23,11 @@ const firebaseConfig = {
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
 export const db: Firestore = getFirestore(app);
+export const auth: Auth = getAuth(app);
 
-// Analytics uses window checks to prevent crashing in non-browser environments
+// Services that need window check
 export const analytics: Analytics | null = typeof window !== 'undefined' ? getAnalytics(app) : null;
+export const perf: FirebasePerformance | null = typeof window !== 'undefined' ? getPerformance(app) : null;
 
 /* ── Firestore Collections ── */
 
